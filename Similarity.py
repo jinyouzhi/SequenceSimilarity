@@ -35,7 +35,7 @@ def load_venue():
 
 if __name__ == '__main__':
     N = 1084
-    sim = [[0.0]*N]*N
+    sim = [[0.0 for i in range(N)] for i in range(N)]
     seqs = load_seq()
     dictV = load_venue()
     conn = sqlite3.connect('db.db')
@@ -64,7 +64,7 @@ if __name__ == '__main__':
             T1 = T - datetime.timedelta(seconds=dT1)
             T2 = T + datetime.timedelta(seconds=dT2)
 
-            cur.execute("SELECT [User ID], [Venue ID] FROM NYC WHERE [Venue category] = ? AND Cluster = ? AND Time >= ? AND Time < ?",
+            cur.execute("SELECT DISTINCT [User ID], [Venue ID] FROM NYC WHERE [Venue category] = ? AND Cluster = ? AND Time >= ? AND Time < ?",
                         (P, C, T1.strftime("%Y/%m/%d %H:%M:%S"), T2.strftime("%Y/%m/%d %H:%M:%S")))
             cseq = cur.fetchall()
             cur.execute("SELECT [User ID], COUNT(*) FROM NYC WHERE [Venue ID] = ? AND Time >= ? AND Time < ? GROUP BY [User ID]",
@@ -90,8 +90,8 @@ if __name__ == '__main__':
                     CTPoi[int(x[0])] = CTPoi[int(x[0])] + 1
         for Q in range(1,N):
             if CTSeq[Q] != 0:
-                sim[U][Q] = sim[U][Q] + Vs[Q] * (math.pow(2,CTSeq[Q]) - 1) * (math.pow(2,CTPoi[Q]) - 1) / CTSeq[Q]
-    f=open('similarity.txt','r')
+                sim[U][Q] = sim[U][Q] + Vs[Q] * math.pow(2,CTSeq[Q]) * math.pow(2,CTPoi[Q]) / CTSeq[Q]
+    f=open('similarity.txt','w')
     for U in range(1, N):
         f.write(str(sim[U][1]))
         for Q in range(2, N):
