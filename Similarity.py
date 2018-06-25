@@ -35,7 +35,7 @@ def load_venue():
 
 if __name__ == '__main__':
     N = 1084
-    sim = [[0.0]*N]*N
+    sim = [[0.0 for i in range(N)] for i in range(N)]
     seqs = load_seq()
     dictV = load_venue()
     conn = sqlite3.connect('db.db')
@@ -50,6 +50,8 @@ if __name__ == '__main__':
         CTPoi = [0] * N
         Vs = [0.0] * N
         L = len(seq)
+        # if L < 2:
+        #     continue
         for i in range(L):
             (V, T) = seq[i]
             (P, C, _) = dictV[V]
@@ -64,8 +66,11 @@ if __name__ == '__main__':
             T1 = T - datetime.timedelta(seconds=dT1)
             T2 = T + datetime.timedelta(seconds=dT2)
 
-            cur.execute("SELECT [User ID], [Venue ID] FROM NYC WHERE [Venue category] = ? AND Cluster = ? AND Time >= ? AND Time < ?",
+            # cur.execute("SELECT DISTINCT [User ID], [Venue ID] FROM NYC WHERE [Venue category] = ? AND Time >= ? AND Time < ?",
+            #             (P, T1.strftime("%Y/%m/%d %H:%M:%S"), T2.strftime("%Y/%m/%d %H:%M:%S")))
+            cur.execute("SELECT DISTINCT [User ID], [Venue ID] FROM NYC WHERE [Venue category] = ? AND Cluster = ? AND Time >= ? AND Time < ?",
                         (P, C, T1.strftime("%Y/%m/%d %H:%M:%S"), T2.strftime("%Y/%m/%d %H:%M:%S")))
+            # print(T1.strftime("%Y/%m/%d %H:%M:%S"),T2.strftime("%Y/%m/%d %H:%M:%S"))
             cseq = cur.fetchall()
             cur.execute("SELECT [User ID], COUNT(*) FROM NYC WHERE [Venue ID] = ? AND Time >= ? AND Time < ? GROUP BY [User ID]",
                         (V, T1.strftime("%Y/%m/%d %H:%M:%S"), T2.strftime("%Y/%m/%d %H:%M:%S")))
@@ -89,10 +94,16 @@ if __name__ == '__main__':
                 for x in cpoi:
                     CTPoi[int(x[0])] = CTPoi[int(x[0])] + 1
         for Q in range(1,N):
-            if CTSeq[Q] != 0:
-                sim[U][Q] = sim[U][Q] + Vs[Q] * (math.pow(2,CTSeq[Q]) - 1) * (math.pow(2,CTPoi[Q]) - 1) / CTSeq[Q]
-    f=open('similarity.txt','r')
+            if CTSeq[Q] != 0 :
+                sim[U][Q] = sim[U][Q] + Vs[Q] * CTSeq[Q] * math.pow(2,CTPoi[Q]) / CTSeq[Q]
+                # if CTPoi[Q] != 0:
+                #     sim[U][Q] = sim[U][Q] + Vs[Q] * CTSeq[Q] * math.pow(2,CTPoi[Q]) / CTSeq[Q]
+                # else:
+                #     sim[U][Q] = sim[U][Q] + Vs[Q] * CTSeq[Q] / CTSeq[Q]
+    f=open('similarity.txt','w')
     for U in range(1, N):
+        # 对角线清空
+        sim[U][U]= 0.0
         f.write(str(sim[U][1]))
         for Q in range(2, N):
             f.write('\t'+str(sim[U][Q]))
